@@ -6,23 +6,24 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:v6.1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
 
       - name: Build and Merge Binary
-        uses: espressif/esp-idf-ci-action@v1
-        with:
-          esp_idf_version: v6.1
-          target: esp32c6
-          command: |
-            find . -name "idf_component.yml" -exec sed -i '/override_path:/d' {} +
-            idf.py build
-            esptool --chip esp32c6 merge-bin -o merged-otbr-esp32c6.bin @build/flash_args
+        shell: bash
+        run: |
+          . /opt/esp/idf/export.sh
+          find . -name "idf_component.yml" -exec sed -i '/path:/d' {} +
+          idf.py set-target esp32c6
+          idf.py build
+          esptool --chip esp32c6 merge-bin -o merged-otbr-esp32c6.bin @build/flash_args
 
       - name: Upload Firmware
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: esp32c6-standalone-otbr
           path: merged-otbr-esp32c6.bin
