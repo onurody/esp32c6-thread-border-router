@@ -32,7 +32,8 @@ jobs:
           EOF
           idf.py set-target esp32c6
           idf.py build
-          esptool.py --chip esp32c6 merge_bin -o /__w/esp32c6-wifi-otbr.bin @build/flash_args
+          cd build
+          esptool.py --chip esp32c6 merge_bin -o /__w/esp32c6-wifi-otbr.bin @flash_args
 
       - name: Upload Firmware
         uses: actions/upload-artifact@v4
