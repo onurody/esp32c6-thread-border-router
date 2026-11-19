@@ -19,7 +19,7 @@ jobs:
         run: |
           . /opt/esp/idf/export.sh
           cd examples/basic_thread_border_router
-          idf.py set-target esp32c6
+          sed -i '/AUTO_UPDATE_RCP/d' sdkconfig.defaults || true
           cat << 'EOF' >> sdkconfig.defaults
           CONFIG_EXAMPLE_CONNECT_WIFI=y
           CONFIG_EXAMPLE_WIFI_SSID="ONUR-YILDIZ"
@@ -28,8 +28,11 @@ jobs:
           CONFIG_OPENTHREAD_RADIO_NATIVE=y
           CONFIG_OPENTHREAD_RADIO_SPINEL_UART=n
           CONFIG_AUTO_UPDATE_RCP=n
+          CONFIG_OPENTHREAD_RCP_COMMAND=n
           EOF
-          idf.py reconfigure
+          sed -i 's/esp_rcp_update_create_ota_image/#esp_rcp_update_create_ota_image/g' CMakeLists.txt || true
+          sed -i 's/esp_rcp_update_create_ota_image/#esp_rcp_update_create_ota_image/g' main/CMakeLists.txt || true
+          idf.py set-target esp32c6
           idf.py build
           esptool.py --chip esp32c6 merge_bin -o /__w/esp32c6-wifi-otbr.bin @build/flash_args
 
