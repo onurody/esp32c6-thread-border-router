@@ -7,7 +7,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: espressif/idf:release-v5.3
+      image: espressif/idf:latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -15,6 +15,7 @@ jobs:
 
       - name: Build and Merge Binary
         run: |
+          . $IDF_PATH/export.sh
           idf.py set-target esp32c6
           idf.py build
           esptool.py --chip esp32c6 merge_bin -o merged-otbr-esp32c6.bin @build/flash_args
