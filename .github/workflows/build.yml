@@ -15,26 +15,10 @@ jobs:
           . /opt/esp/idf/export.sh
           cp -r /opt/esp/idf/examples/openthread/ot_br /tmp/ot_br
           cd /tmp/ot_br
-          python3 -c '
-          p = "main/esp_ot_br.c"
-          s = open(p).read()
-          s = "#include \"driver/gpio.h\"\n#include \"esp_ot_wifi_cmd.h\"\n" + s
-          init_code = """app_main(void)
-          {
-              gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);
-              gpio_set_level(GPIO_NUM_3, 0);
-              gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);
-              gpio_set_level(GPIO_NUM_14, 1);"""
-          s = s.replace("app_main(void)\n{", init_code, 1)
-          s = s.replace("esp_openthread_launch_mainloop(&config);", "esp_ot_wifi_connect(\"ONUR-YILDIZ\", \"5412000735\");\n    esp_openthread_launch_mainloop(&config);", 1)
-          open(p, "w").write(s)
-          '
+          python3 -c 'p="main/esp_ot_br.c"; s=open(p).read(); h="#include \"driver/gpio.h\"\n#include \"esp_ot_wifi_cmd.h\"\n#include \"freertos/FreeRTOS.h\"\n#include \"freertos/task.h\"\nstatic void auto_wifi_task(void *pvParameters) { vTaskDelay(pdMS_TO_TICKS(4000)); esp_ot_wifi_connect(\"ONUR-YILDIZ\", \"5412000735\"); vTaskDelete(NULL); }\n"; s=h+s; init="app_main(void)\n{\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);"; s=s.replace("app_main(void)\n{", init, 1); s=s.replace("esp_openthread_launch_mainloop(&config);", "xTaskCreate(auto_wifi_task, \"auto_wifi\", 4096, NULL, 5, NULL);\n    esp_openthread_launch_mainloop(&config);", 1); open(p, "w").write(s)'
           cat << 'EOF' >> sdkconfig.defaults
           CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
           CONFIG_ESP_CONSOLE_UART_DEFAULT=n
-          CONFIG_EXAMPLE_CONNECT_WIFI=y
-          CONFIG_EXAMPLE_WIFI_SSID="ONUR-YILDIZ"
-          CONFIG_EXAMPLE_WIFI_PASSWORD="5412000735"
           CONFIG_OPENTHREAD_BR_AUTO_START=y
           CONFIG_OPENTHREAD_RADIO_NATIVE=y
           CONFIG_OPENTHREAD_RADIO_SPINEL_UART=n
