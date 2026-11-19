@@ -25,7 +25,11 @@ jobs:
           CONFIG_EXAMPLE_WIFI_SSID="ONUR-YILDIZ"
           CONFIG_EXAMPLE_WIFI_PASSWORD="5412000735"
           CONFIG_OPENTHREAD_BR_AUTO_START=y
+          CONFIG_OPENTHREAD_RADIO_NATIVE=y
+          CONFIG_OPENTHREAD_RADIO_SPINEL_UART=n
+          CONFIG_AUTO_UPDATE_RCP=n
           EOF
+          idf.py reconfigure
           idf.py build
           esptool.py --chip esp32c6 merge_bin -o /__w/esp32c6-wifi-otbr.bin @build/flash_args
 
