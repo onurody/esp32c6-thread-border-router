@@ -9,12 +9,16 @@ jobs:
     container:
       image: espressif/idf:release-v5.3
     steps:
-      - name: Build Espressif Thread BR
+      - uses: actions/checkout@v4
+        with:
+          repository: espressif/esp-thread-br
+          submodules: recursive
+
+      - name: Build ESP32-C6 Wi-Fi OTBR
         shell: bash
         run: |
           . /opt/esp/idf/export.sh
-          git clone --recursive https://github.com
-          cd esp-thread-br/examples/basic_thread_border_router
+          cd examples/basic_thread_border_router
           idf.py set-target esp32c6
           cat << 'EOF' >> sdkconfig.defaults
           CONFIG_EXAMPLE_CONNECT_WIFI=y
