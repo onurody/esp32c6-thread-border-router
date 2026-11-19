@@ -15,12 +15,11 @@ jobs:
           . /opt/esp/idf/export.sh
           cp -r /opt/esp/idf/examples/openthread/ot_br /tmp/ot_br
           cd /tmp/ot_br
-          python3 -c 'p="main/esp_ot_br.c"; s=open(p).read(); h="#include \"driver/gpio.h\"\n#include \"esp_ot_wifi_cmd.h\"\n#include \"freertos/FreeRTOS.h\"\n#include \"freertos/task.h\"\nstatic void auto_wifi_task(void *pvParameters) { vTaskDelay(pdMS_TO_TICKS(5000)); esp_ot_wifi_connect(\"ONUR-YILDIZ\", \"5412000735\"); vTaskDelete(NULL); }\n"; s=h+s; init="app_main(void)\n{\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);\n    xTaskCreate(auto_wifi_task, \"auto_wifi\", 4096, NULL, 5, NULL);"; s=s.replace("app_main(void)\n{", init, 1); open(p, "w").write(s)'
+          python3 -c 'p="main/esp_ot_br.c"; s=open(p).read(); h="#include \"driver/gpio.h\"\n#include \"esp_ot_wifi_cmd.h\"\n#include \"openthread/instance.h\"\n#include \"openthread/ip6.h\"\n#include \"openthread/thread.h\"\n#include \"esp_openthread_lock.h\"\n#include \"freertos/FreeRTOS.h\"\n#include \"freertos/task.h\"\nextern otInstance *esp_openthread_get_instance(void);\nstatic void auto_start_task(void *pvParameters) { vTaskDelay(pdMS_TO_TICKS(5000)); esp_ot_wifi_connect(\"ONUR-YILDIZ\", \"5412000735\"); vTaskDelay(pdMS_TO_TICKS(5000)); esp_openthread_lock_acquire(portMAX_DELAY); otInstance *ins = esp_openthread_get_instance(); if (ins) { otIp6SetEnabled(ins, true); otThreadSetEnabled(ins, true); } esp_openthread_lock_release(); vTaskDelete(NULL); }\n"; s=h+s; init="app_main(void)\n{\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);\n    xTaskCreate(auto_start_task, \"auto_start\", 4096, NULL, 5, NULL);"; s=s.replace("app_main(void)\n{", init, 1); open(p, "w").write(s)'
           cat << 'EOF' >> sdkconfig.defaults
           CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
           CONFIG_ESP_CONSOLE_UART_DEFAULT=n
           CONFIG_OPENTHREAD_BR_AUTO_START=y
-          CONFIG_OPENTHREAD_BR_REST_ENABLE=y
           CONFIG_OPENTHREAD_RADIO_NATIVE=y
           CONFIG_OPENTHREAD_RADIO_SPINEL_UART=n
           EOF
