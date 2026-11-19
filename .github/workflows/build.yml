@@ -9,17 +9,15 @@ jobs:
     container:
       image: espressif/idf:release-v5.3
     steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: espressif/esp-thread-br
-          submodules: recursive
-
-      - name: Build ESP32-C6 Wi-Fi OTBR
+      - name: Build ESP32-C6 Standalone Wi-Fi OTBR
         shell: bash
         run: |
           . /opt/esp/idf/export.sh
-          cd examples/basic_thread_border_router
-          sed -i '/AUTO_UPDATE_RCP/d' sdkconfig.defaults || true
+          cp -r /opt/esp/idf/examples/openthread/ot_br /tmp/ot_br
+          cd /tmp/ot_br
+          sed -i 's/void app_main(void)/#include "driver\/gpio.h"\nvoid app_main(void)/' main/esp_ot_br.c
+          sed -i 's/app_main(void)/app_main(void)\n{\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);/' main/esp_ot_br.c
+          sed -i '0,/{/s///' main/esp_ot_br.c
           cat << 'EOF' >> sdkconfig.defaults
           CONFIG_EXAMPLE_CONNECT_WIFI=y
           CONFIG_EXAMPLE_WIFI_SSID="ONUR-YILDIZ"
@@ -27,11 +25,7 @@ jobs:
           CONFIG_OPENTHREAD_BR_AUTO_START=y
           CONFIG_OPENTHREAD_RADIO_NATIVE=y
           CONFIG_OPENTHREAD_RADIO_SPINEL_UART=n
-          CONFIG_AUTO_UPDATE_RCP=n
-          CONFIG_OPENTHREAD_RCP_COMMAND=n
           EOF
-          sed -i 's/esp_rcp_update_create_ota_image/#esp_rcp_update_create_ota_image/g' CMakeLists.txt || true
-          sed -i 's/esp_rcp_update_create_ota_image/#esp_rcp_update_create_ota_image/g' main/CMakeLists.txt || true
           idf.py set-target esp32c6
           idf.py build
           esptool.py --chip esp32c6 merge_bin -o /__w/esp32c6-wifi-otbr.bin @build/flash_args
