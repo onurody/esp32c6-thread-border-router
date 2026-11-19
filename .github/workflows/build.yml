@@ -15,9 +15,13 @@ jobs:
           . /opt/esp/idf/export.sh
           cp -r /opt/esp/idf/examples/openthread/ot_br /tmp/ot_br
           cd /tmp/ot_br
-          sed -i 's/void app_main(void)/#include "driver\/gpio.h"\nvoid app_main(void)/' main/esp_ot_br.c
-          sed -i 's/app_main(void)/app_main(void)\n{\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);/' main/esp_ot_br.c
-          sed -i '0,/{/s///' main/esp_ot_br.c
+          python3 -c '
+          p = "main/esp_ot_br.c"
+          s = open(p).read()
+          s = "#include \"driver/gpio.h\"\n" + s
+          s = s.replace("app_main(void)\n{", "app_main(void)\n{\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);", 1)
+          open(p, "w").write(s)
+          '
           cat << 'EOF' >> sdkconfig.defaults
           CONFIG_EXAMPLE_CONNECT_WIFI=y
           CONFIG_EXAMPLE_WIFI_SSID="ONUR-YILDIZ"
