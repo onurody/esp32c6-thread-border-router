@@ -9,18 +9,24 @@ jobs:
     container:
       image: espressif/idf:release-v5.3
     steps:
-      - name: Clone Official Espressif Thread BR
+      - name: Build Espressif Thread BR
         shell: bash
         run: |
           . /opt/esp/idf/export.sh
           git clone --recursive https://github.com
           cd esp-thread-br/examples/basic_thread_border_router
           idf.py set-target esp32c6
+          cat << 'EOF' >> sdkconfig.defaults
+          CONFIG_EXAMPLE_CONNECT_WIFI=y
+          CONFIG_EXAMPLE_WIFI_SSID="ONUR-YILDIZ"
+          CONFIG_EXAMPLE_WIFI_PASSWORD="5412000735"
+          CONFIG_OPENTHREAD_BR_AUTO_START=y
+          EOF
           idf.py build
-          esptool.py --chip esp32c6 merge_bin -o /__w/merged-otbr-esp32c6.bin @build/flash_args
+          esptool.py --chip esp32c6 merge_bin -o /__w/esp32c6-wifi-otbr.bin @build/flash_args
 
       - name: Upload Firmware
         uses: actions/upload-artifact@v4
         with:
-          name: esp32c6-standalone-otbr
-          path: /__w/merged-otbr-esp32c6.bin
+          name: esp32c6-wifi-otbr
+          path: /__w/esp32c6-wifi-otbr.bin
