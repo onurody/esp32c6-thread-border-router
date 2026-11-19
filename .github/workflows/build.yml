@@ -1,0 +1,26 @@
+name: Build ESP32-C6 OTBR
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v5.3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build and Merge Binary
+        run: |
+          idf.py set-target esp32c6
+          idf.py build
+          esptool.py --chip esp32c6 merge_bin -o merged-otbr-esp32c6.bin @build/flash_args
+
+      - name: Upload Firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32c6-standalone-otbr
+          path: merged-otbr-esp32c6.bin
