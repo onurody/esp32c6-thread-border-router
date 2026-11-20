@@ -21,14 +21,25 @@ jobs:
           s = open(p).read()
           h = """#include "driver/gpio.h"
           #include "esp_ot_wifi_cmd.h"
+          #include "esp_openthread_border_router.h"
+          #include "esp_openthread_lock.h"
+          #include "esp_netif.h"
           #include "esp_console.h"
           #include "freertos/FreeRTOS.h"
           #include "freertos/task.h"
           static void auto_start_task(void *pvParameters) {
               int ret;
               vTaskDelay(pdMS_TO_TICKS(3000));
-              esp_ot_wifi_connect("wifi_isd", "wifi_pass");
+              esp_ot_wifi_connect("ONUR-YILDIZ", "5412000735");
               vTaskDelay(pdMS_TO_TICKS(2000));
+              esp_openthread_lock_acquire(portMAX_DELAY);
+              esp_netif_t *wifi_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+              if (wifi_netif) {
+                  esp_openthread_set_backbone_netif(wifi_netif);
+                  esp_openthread_border_router_init();
+              }
+              esp_openthread_lock_release();
+              vTaskDelay(pdMS_TO_TICKS(1000));
               esp_console_run("ot ifconfig up", &ret);
               vTaskDelay(pdMS_TO_TICKS(1000));
               esp_console_run("ot thread start", &ret);
