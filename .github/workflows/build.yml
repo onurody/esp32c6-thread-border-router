@@ -1,4 +1,4 @@
-name: Build ESP32-C6 OTBR
+name: Build ESP32-C6 RCP
 
 on:
   workflow_dispatch:
@@ -9,58 +9,31 @@ jobs:
     container:
       image: espressif/idf:release-v5.3
     steps:
-      - name: Build ESP32-C6 Auto-WiFi OTBR
+      - name: Build ESP32-C6 OpenThread RCP
         shell: bash
         run: |
           . /opt/esp/idf/export.sh
-          cp -r /opt/esp/idf/examples/openthread/ot_br /tmp/ot_br
-          cd /tmp/ot_br
+          cp -r /opt/esp/idf/examples/openthread/ot_rcp /tmp/ot_rcp
+          cd /tmp/ot_rcp
           python3 -c '
           import re
-          p = "main/esp_ot_br.c"
+          p = "main/esp_ot_rcp.c"
           s = open(p).read()
-          h = """#include "driver/gpio.h"
-          #include "esp_ot_wifi_cmd.h"
-          #include "esp_openthread_border_router.h"
-          #include "esp_netif.h"
-          #include "esp_console.h"
-          #include "freertos/FreeRTOS.h"
-          #include "freertos/task.h"
-          static void auto_thread_task(void *pvParameters) {
-              int ret;
-              vTaskDelay(pdMS_TO_TICKS(3000));
-              esp_ot_wifi_connect("ONUR-YILDIZ", "5412000735");
-              vTaskDelay(pdMS_TO_TICKS(2000));
-              esp_netif_t *wifi_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-              if (wifi_netif) {
-                  esp_openthread_set_backbone_netif(wifi_netif);
-                  esp_openthread_border_router_init();
-              }
-              vTaskDelay(pdMS_TO_TICKS(1000));
-              esp_console_run("ot ifconfig up", &ret);
-              vTaskDelay(pdMS_TO_TICKS(1000));
-              esp_console_run("ot thread start", &ret);
-              vTaskDelete(NULL);
-          }
-          """
-          s = h + s
-          s = re.sub(r"void\s+app_main\s*\(\s*void\s*\)\s*\{", "void app_main(void) {\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);\n    xTaskCreate(auto_thread_task, \"auto_thread\", 6144, NULL, 5, NULL);", s, count=1)
+          s = "#include \"driver/gpio.h\"\n" + s
+          s = re.sub(r"void\s+app_main\s*\(\s*void\s*\)\s*\{", "void app_main(void) {\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);", s, count=1)
           open(p, "w").write(s)
           '
           cat << 'EOF' >> sdkconfig.defaults
-          CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
-          CONFIG_ESP_CONSOLE_UART_DEFAULT=n
-          CONFIG_OPENTHREAD_BR_AUTO_START=y
-          CONFIG_OPENTHREAD_RADIO_NATIVE=y
-          CONFIG_OPENTHREAD_RADIO_SPINEL_UART=n
+          CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG=y
+          CONFIG_OPENTHREAD_RCP_UART=n
           EOF
           idf.py set-target esp32c6
           idf.py build
           cd build
-          esptool.py --chip esp32c6 merge_bin -o /__w/esp32c6-wifi-otbr.bin @flash_args
+          esptool.py --chip esp32c6 merge_bin -o /__w/esp32c6-ot-rcp.bin @flash_args
 
       - name: Upload Firmware
         uses: actions/upload-artifact@v4
         with:
-          name: esp32c6-wifi-otbr
-          path: /__w/esp32c6-wifi-otbr.bin
+          name: esp32c6-ot-rcp
+          path: /__w/esp32c6-ot-rcp.bin
