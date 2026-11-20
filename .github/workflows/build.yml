@@ -27,7 +27,7 @@ jobs:
           static void auto_start_task(void *pvParameters) {
               int ret;
               vTaskDelay(pdMS_TO_TICKS(3000));
-              esp_ot_wifi_connect("ONUR-YILDIZ", "5412000735");
+              esp_ot_wifi_connect("wifi_isd", "wifi_pass");
               vTaskDelay(pdMS_TO_TICKS(2000));
               esp_console_run("ot ifconfig up", &ret);
               vTaskDelay(pdMS_TO_TICKS(1000));
