@@ -21,26 +21,17 @@ jobs:
           s = open(p).read()
           h = """#include "driver/gpio.h"
           #include "esp_ot_wifi_cmd.h"
-          #include "openthread/instance.h"
-          #include "openthread/ip6.h"
-          #include "openthread/thread.h"
-          #include "openthread/border_router.h"
-          #include "esp_openthread_lock.h"
+          #include "esp_console.h"
           #include "freertos/FreeRTOS.h"
           #include "freertos/task.h"
-          extern otInstance *esp_openthread_get_instance(void);
           static void auto_start_task(void *pvParameters) {
+              int ret;
               vTaskDelay(pdMS_TO_TICKS(3000));
               esp_ot_wifi_connect("ONUR-YILDIZ", "5412000735");
-              vTaskDelay(pdMS_TO_TICKS(3000));
-              esp_openthread_lock_acquire(portMAX_DELAY);
-              otInstance *ins = esp_openthread_get_instance();
-              if (ins) {
-                  otIp6SetEnabled(ins, true);
-                  otThreadSetEnabled(ins, true);
-                  otBorderRouterRegister(ins);
-              }
-              esp_openthread_lock_release();
+              vTaskDelay(pdMS_TO_TICKS(2000));
+              esp_console_run("ot ifconfig up", &ret);
+              vTaskDelay(pdMS_TO_TICKS(1000));
+              esp_console_run("ot thread start", &ret);
               vTaskDelete(NULL);
           }
           """
