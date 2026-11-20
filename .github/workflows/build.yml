@@ -20,26 +20,12 @@ jobs:
           p = "main/esp_ot_br.c"
           s = open(p).read()
           h = """#include "driver/gpio.h"
-          #include "esp_ot_wifi_cmd.h"
-          #include "esp_openthread_border_router.h"
-          #include "esp_openthread_lock.h"
-          #include "esp_netif.h"
           #include "esp_console.h"
           #include "freertos/FreeRTOS.h"
           #include "freertos/task.h"
-          static void auto_start_task(void *pvParameters) {
+          static void auto_thread_task(void *pvParameters) {
               int ret;
-              vTaskDelay(pdMS_TO_TICKS(3000));
-              esp_ot_wifi_connect("ONUR-YILDIZ", "5412000735");
-              vTaskDelay(pdMS_TO_TICKS(2000));
-              esp_openthread_lock_acquire(portMAX_DELAY);
-              esp_netif_t *wifi_netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-              if (wifi_netif) {
-                  esp_openthread_set_backbone_netif(wifi_netif);
-                  esp_openthread_border_router_init();
-              }
-              esp_openthread_lock_release();
-              vTaskDelay(pdMS_TO_TICKS(1000));
+              vTaskDelay(pdMS_TO_TICKS(15000));
               esp_console_run("ot ifconfig up", &ret);
               vTaskDelay(pdMS_TO_TICKS(1000));
               esp_console_run("ot thread start", &ret);
@@ -47,12 +33,15 @@ jobs:
           }
           """
           s = h + s
-          s = re.sub(r"void\s+app_main\s*\(\s*void\s*\)\s*\{", "void app_main(void) {\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);\n    xTaskCreate(auto_start_task, \"auto_start\", 6144, NULL, 5, NULL);", s, count=1)
+          s = re.sub(r"void\s+app_main\s*\(\s*void\s*\)\s*\{", "void app_main(void) {\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);\n    xTaskCreate(auto_thread_task, \"auto_thread\", 4096, NULL, 5, NULL);", s, count=1)
           open(p, "w").write(s)
           '
           cat << 'EOF' >> sdkconfig.defaults
           CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
           CONFIG_ESP_CONSOLE_UART_DEFAULT=n
+          CONFIG_EXAMPLE_CONNECT_WIFI=y
+          CONFIG_EXAMPLE_WIFI_SSID="ONUR-YILDIZ"
+          CONFIG_EXAMPLE_WIFI_PASSWORD="5412000735"
           CONFIG_OPENTHREAD_BR_AUTO_START=y
           CONFIG_OPENTHREAD_RADIO_NATIVE=y
           CONFIG_OPENTHREAD_RADIO_SPINEL_UART=n
