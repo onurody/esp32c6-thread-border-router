@@ -1,0 +1,41 @@
+name: Build ESP32-C6 Thread Router
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v5.3
+    steps:
+      - name: Build ESP32-C6 OpenThread Router
+        shell: bash
+        run: |
+          . /opt/esp/idf/export.sh
+          cp -r /opt/esp/idf/examples/openthread/ot_cli /tmp/ot_router
+          cd /tmp/ot_router
+          python3 -c '
+          import re
+          p = "main/esp_ot_cli.c"
+          s = open(p).read()
+          s = "#include \"driver/gpio.h\"\n" + s
+          s = re.sub(r"void\s+app_main\s*\(\s*void\s*\)\s*\{", "void app_main(void) {\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);", s, count=1)
+          open(p, "w").write(s)
+          '
+          cat << 'EOF' >> sdkconfig.defaults
+          CONFIG_OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG=y
+          CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+          CONFIG_OPENTHREAD_FTD=y
+          CONFIG_OPENTHREAD_MTD=n
+          EOF
+          idf.py set-target esp32c6
+          idf.py build
+          cd build
+          esptool.py --chip esp32c6 merge_bin -o /__w/esp32c6-ot-router.bin @flash_args
+
+      - name: Upload Firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32c6-ot-router
+          path: /__w/esp32c6-ot-router.bin
