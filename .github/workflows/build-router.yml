@@ -19,8 +19,9 @@ jobs:
           import re
           p = "main/esp_ot_cli.c"
           s = open(p).read()
-          s = "#include \"driver/gpio.h\"\n" + s
+          s = "#include \"driver/gpio.h\"\n#include \"openthread/instance.h\"\n#include \"openthread/ip6.h\"\n#include \"openthread/thread.h\"\n" + s
           s = re.sub(r"void\s+app_main\s*\(\s*void\s*\)\s*\{", "void app_main(void) {\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);", s, count=1)
+          s = s.replace("esp_openthread_launch_mainloop();", "otInstance *inst = esp_openthread_get_instance();\n    if (otDatasetIsCommissioned(inst)) {\n        otIp6SetEnabled(inst, true);\n        otThreadSetEnabled(inst, true);\n    }\n    esp_openthread_launch_mainloop();")
           open(p, "w").write(s)
           '
           cat << 'EOF' >> sdkconfig.defaults
@@ -28,7 +29,6 @@ jobs:
           CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
           CONFIG_OPENTHREAD_FTD=y
           CONFIG_OPENTHREAD_MTD=n
-          CONFIG_OPENTHREAD_AUTO_START=y
           EOF
           idf.py set-target esp32c6
           idf.py build
