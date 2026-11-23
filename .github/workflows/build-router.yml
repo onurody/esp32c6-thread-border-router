@@ -16,16 +16,16 @@ jobs:
           cp -r /opt/esp/idf/examples/openthread/ot_cli /tmp/ot_router
           cd /tmp/ot_router
           python3 -c '
+          import re
           p = "main/esp_ot_cli.c"
           s = open(p).read()
-          assert "esp_openthread_launch_mainloop" in s, "Target function not found"
-          inc = "#include \"driver/gpio.h\"\n#include \"openthread/ip6.h\"\n#include \"openthread/thread.h\"\n"
-          gpio = "gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT); gpio_set_level(GPIO_NUM_3, 0); gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT); gpio_set_level(GPIO_NUM_14, 1);"
-          start = "otIp6SetEnabled(esp_openthread_get_instance(), true); otThreadSetEnabled(esp_openthread_get_instance(), true);\n    esp_openthread_launch_mainloop();"
-          s = inc + s.replace("app_main(void)\n{", "app_main(void)\n{\n    " + gpio).replace("esp_openthread_launch_mainloop();", start)
-          assert "otThreadSetEnabled" in s and "GPIO_NUM_14" in s, "Patch failed"
+          s = "#include \"driver/gpio.h\"\n" + s
+          s = re.sub(r"void\s+app_main\s*\(\s*void\s*\)\s*\{", "void app_main(void) {\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);", s, count=1)
+          idx = s.rfind("}")
+          s = s[:idx] + "\n    esp_openthread_auto_start(NULL);\n}\n"
           open(p, "w").write(s)
           '
+          tail -n 15 main/esp_ot_cli.c
           cat << 'EOF' >> sdkconfig.defaults
           CONFIG_OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG=y
           CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
