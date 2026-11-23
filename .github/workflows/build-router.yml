@@ -15,7 +15,7 @@ jobs:
           . /opt/esp/idf/export.sh
           cp -r /opt/esp/idf/examples/openthread/ot_cli /tmp/ot_router
           cd /tmp/ot_router
-          python3 -c 'import re; p="main/esp_ot_cli.c"; s=open(p).read(); s="#include \"driver/gpio.h\"\n#include \"openthread/cli.h\"\n"+s; s=re.sub(r"void\s+app_main\s*\(\s*void\s*\)\s*\{", "void app_main(void) {\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);", s, count=1); s=s.replace("esp_openthread_cli_init();", "esp_openthread_cli_init();\n    otCliInputLine(\"ifconfig up\");\n    otCliInputLine(\"thread start\");"); open(p,"w").write(s)'
+          python3 -c 'import re; p="main/esp_ot_cli.c"; s=open(p).read(); s="#include \"driver/gpio.h\"\n#include \"openthread/cli.h\"\n"+s; s=re.sub(r"void\s+app_main\s*\(\s*void\s*\)\s*\{", "void app_main(void) {\n    gpio_set_direction(GPIO_NUM_3, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_3, 0);\n    gpio_set_direction(GPIO_NUM_14, GPIO_MODE_OUTPUT);\n    gpio_set_level(GPIO_NUM_14, 1);", s, count=1); s=s.replace("esp_openthread_cli_create_task();", "esp_openthread_cli_create_task();\n    otCliInputLine(\"ifconfig up\");\n    otCliInputLine(\"thread start\");"); open(p,"w").write(s)'
           cat << 'EOF' >> sdkconfig.defaults
           CONFIG_OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG=y
           CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
