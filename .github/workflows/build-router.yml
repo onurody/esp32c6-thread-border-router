@@ -28,6 +28,7 @@ jobs:
           CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
           CONFIG_OPENTHREAD_FTD=y
           CONFIG_OPENTHREAD_MTD=n
+          CONFIG_OPENTHREAD_AUTO_START=y
           EOF
           idf.py set-target esp32c6
           idf.py build
